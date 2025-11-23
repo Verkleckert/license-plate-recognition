@@ -9,6 +9,11 @@ try:
 except Exception:
     YOLO = None
 
+try:
+    import torch
+except Exception:
+    torch = None
+
 
 def gather_images(images_dir):
     exts = ('.jpg', '.jpeg', '.png', '.bmp')
@@ -46,7 +51,10 @@ def main():
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--imgsz', type=int, default=640)
     parser.add_argument('--batch', type=int, default=16)
-    parser.add_argument('--resume', action='store_true', help='Resume training from checkpoint (preserve optimizer state when possible)')
+    parser.add_argument('--device', default='auto',
+                        help="Device to use for training: 'auto', 'cpu', or GPU id like '0' or 'cuda:0'")
+    parser.add_argument('--resume', action='store_true',
+                        help='Resume training from checkpoint (preserve optimizer state when possible)')
     parser.add_argument('--copy', action='store_true',
                         help='Copy files when creating val split instead of moving')
     args = parser.parse_args()
@@ -170,8 +178,23 @@ def main():
     print('Starte Training mit Modell', args.model)
     try:
         model = YOLO(args.model)
+        # report device info
+        if torch is not None:
+            try:
+                cuda_avail = torch.cuda.is_available()
+                print('torch.cuda.is_available():', cuda_avail)
+                if cuda_avail:
+                    print('CUDA version:', torch.version.cuda)
+                    print('GPU count:', torch.cuda.device_count())
+                    try:
+                        print('GPU name:', torch.cuda.get_device_name(0))
+                    except Exception:
+                        pass
+            except Exception:
+                pass
         # pass resume flag to ultralytics (True preserves optimizer state when resuming a previous run)
-        model.train(data=data_yaml_path, epochs=args.epochs, imgsz=args.imgsz, batch=args.batch, save=True, save_period=1, resume=args.resume)
+        model.train(data=data_yaml_path, epochs=args.epochs, imgsz=args.imgsz,
+                    batch=args.batch, save=True, save_period=1, resume=args.resume, device=args.device)
         best = Path('runs')
         if best.exists():
             for p in best.rglob('best.pt'):

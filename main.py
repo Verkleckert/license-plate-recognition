@@ -27,7 +27,7 @@ if YOLO is not None:
         print("Fehler beim Laden des Modells:", e)
         model = None
 
-cap = cv2.VideoCapture(2)  # adjust camera index if needed
+cap = cv2.VideoCapture(0)  # adjust camera index if needed
 if not cap.isOpened():
     print("Cannot open camera")
     sys.exit(1)
